@@ -12,15 +12,16 @@ const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 
 async function buildServerless() {
   const apiDir = path.resolve(artifactDir, "api");
-  await rm(path.resolve(apiDir, "index.mjs"), { force: true });
+  await rm(apiDir, { recursive: true, force: true });
   await mkdir(apiDir, { recursive: true });
 
   await esbuild({
-    entryPoints: [path.resolve(artifactDir, "src/app.ts")],
+    entryPoints: [path.resolve(artifactDir, "src/serverless/index.ts")],
     platform: "node",
     bundle: true,
     format: "esm",
-    outfile: path.resolve(apiDir, "index.mjs"),
+    outdir: apiDir,
+    outExtension: { ".js": ".mjs" },
     logLevel: "info",
     external: [
       "*.node",
