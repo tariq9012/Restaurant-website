@@ -108,6 +108,12 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     `,
     },
   });
+
+  // Remove raw TypeScript source after bundling: everything needed now lives
+  // inside api/index.mjs. This also stops Vercel's own post-build TypeScript
+  // pass from picking up (and choking on) src/app.ts.
+  await rm(path.resolve(artifactDir, "src"), { recursive: true, force: true });
+  await rm(path.resolve(artifactDir, "tsconfig.json"), { force: true });
 }
 
 buildServerless().catch((err) => {
