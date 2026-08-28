@@ -121,10 +121,7 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
   // anything meaningful.
   const publicDir = path.resolve(artifactDir, "public");
   await mkdir(publicDir, { recursive: true });
-  await writeFile(
-    path.resolve(publicDir, "index.html"),
-    "<!doctype html><title>Luma API</title><p>API is running.</p>",
-  );
+  await writeFile(path.resolve(publicDir, ".keep"), "");
 }
 
 buildServerless().catch((err) => {
