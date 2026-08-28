@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
-import { rm, mkdir } from "node:fs/promises";
+import { rm, mkdir, writeFile } from "node:fs/promises";
 
 // Plugins may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -114,6 +114,17 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
   // pass from picking up (and choking on) src/app.ts.
   await rm(path.resolve(artifactDir, "src"), { recursive: true, force: true });
   await rm(path.resolve(artifactDir, "tsconfig.json"), { force: true });
+
+  // Vercel (zero-config, "Other" framework) expects a static "public" output
+  // directory to exist. This project has no static assets — every request is
+  // rewritten to the API function — so this just needs to exist, not contain
+  // anything meaningful.
+  const publicDir = path.resolve(artifactDir, "public");
+  await mkdir(publicDir, { recursive: true });
+  await writeFile(
+    path.resolve(publicDir, "index.html"),
+    "<!doctype html><title>Luma API</title><p>API is running.</p>",
+  );
 }
 
 buildServerless().catch((err) => {
