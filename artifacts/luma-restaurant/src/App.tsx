@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ArrowDown, ArrowRight, Check, Clock3, Instagram, Mail, MapPin, Phone, Plus, Search, X } from 'lucide-react';
 import { Link, Route, Switch, Router as WouterRouter } from 'wouter';
@@ -121,6 +122,16 @@ function CheckoutForm({ order, onClose, onComplete }: { order: Dish[]; onClose: 
       <div className="eyebrow">The good part</div>
       <h2 className="font-display text-4xl text-[#f1e4c6] mt-5">Place your order.</h2>
       <p className="mt-3 text-sm text-[#c9b99f]/70">{order.length} {order.length === 1 ? 'dish' : 'dishes'} · {formatPrice(order.reduce((sum, dish) => sum + dish.price, 0))} before tax</p>
+      <ul className="mt-6 divide-y divide-[#e8d9bb]/15 border-y border-[#e8d9bb]/15">
+        {[...new Set(order.map((dish) => dish.id))].map((menuItemId) => {
+          const dish = order.find((item) => item.id === menuItemId)!;
+          const quantity = order.filter((item) => item.id === menuItemId).length;
+          return <li key={menuItemId} className="flex items-center justify-between gap-4 py-3">
+            <span className="text-sm text-[#f1e4c6]">{quantity} × {dish.name}</span>
+            <span className="font-mono-custom text-xs text-[#e9bf83] whitespace-nowrap">{formatPrice(dish.price * quantity)}</span>
+          </li>;
+        })}
+      </ul>
       <form onSubmit={submit} className="mt-8 space-y-6">
         <Field label="Your name" name="customerName" placeholder="Your name" />
         <Field label="Email address" name="customerEmail" type="email" placeholder="you@example.com" />
@@ -161,9 +172,9 @@ function Menu() {
       {loading ? <div className="py-24 text-center text-[#c9b99f]/65 font-mono-custom text-[10px] uppercase tracking-[.12em]">Loading the menu…</div> : loadError ? <div className="py-24 text-center"><p className="font-display text-4xl text-[#f1e4c6]">The kitchen is taking a moment.</p><p className="mt-4 text-sm text-[#c9b99f]/65">{loadError}</p></div> : filtered.length ? <div className="grid md:grid-cols-2 gap-x-10 gap-y-14 mt-14">{filtered.map((dish) => <DishCard key={dish.id} dish={dish} add={add} />)}</div> : <div className="py-24 text-center"><p className="font-display text-4xl text-[#f1e4c6]">Nothing by that name tonight.</p><button onClick={() => setSearch('')} data-testid="button-clear-menu-search" className="mt-5 text-[#e9bf83] font-mono-custom text-[10px] uppercase tracking-[.12em]">Clear search</button></div>}
     </div></section>
     <section className="px-5 md:px-10 py-20 bg-[#30203a]"><div className="mx-auto max-w-[1360px] flex flex-col md:flex-row gap-10 md:items-center justify-between"><div><div className="eyebrow">A note from the kitchen</div><p className="font-display text-4xl md:text-5xl text-[#f1e4c6] mt-5 max-w-[680px]">“The menu is a conversation with the market. It may change before you arrive.”</p></div><div className="md:text-right"><Clock3 className="text-[#df7c5b] md:ml-auto" size={24} /><p className="mt-4 text-sm text-[#c9b99f]/70 leading-6">Please allow 45 minutes<br />for dishes marked for two.</p></div></div></section>
-    {order.length > 0 && <div className="fixed z-20 bottom-5 left-5 right-5 md:left-auto md:right-8 md:w-[360px] bg-[#e9bf83] text-[#241729] p-4 shadow-2xl flex items-center justify-between"><div><span className="font-mono-custom text-[10px] uppercase tracking-[.1em]">{order.length} {order.length === 1 ? 'dish' : 'dishes'} in your order</span><p className="font-display text-xl mt-1">{formatPrice(order.reduce((sum, dish) => sum + dish.price, 0))}</p></div><div className="flex items-center gap-4"><button onClick={() => setOrder([])} data-testid="button-clear-order" className="font-mono-custom text-[10px] uppercase border-b border-[#241729]/50 pb-1">Clear</button><button onClick={() => setCheckoutOpen(true)} data-testid="button-checkout-order" className="font-mono-custom text-[10px] uppercase border-b border-[#241729]/50 pb-1">Order now</button></div></div>}
+    {order.length > 0 && createPortal(<div className="fixed z-20 bottom-5 left-5 right-5 md:left-auto md:right-8 md:w-[360px] bg-[#e9bf83] text-[#241729] p-4 shadow-2xl flex items-center justify-between"><div><span className="font-mono-custom text-[10px] uppercase tracking-[.1em]">{order.length} {order.length === 1 ? 'dish' : 'dishes'} in your order</span><p className="font-display text-xl mt-1">{formatPrice(order.reduce((sum, dish) => sum + dish.price, 0))}</p></div><div className="flex items-center gap-4"><button onClick={() => setOrder([])} data-testid="button-clear-order" className="font-mono-custom text-[10px] uppercase border-b border-[#241729]/50 pb-1">Clear</button><button onClick={() => setCheckoutOpen(true)} data-testid="button-checkout-order" className="font-mono-custom text-[10px] uppercase border-b border-[#241729]/50 pb-1">Order now</button></div></div>, document.body)}
     {checkoutOpen && <CheckoutForm order={order} onClose={() => setCheckoutOpen(false)} onComplete={() => { setOrder([]); setCheckoutOpen(false); setNotice('Order placed — thank you'); window.setTimeout(() => setNotice(''), 2600); }} />}
-    {notice && <div role="status" data-testid="status-dish-added" className="fixed z-30 top-24 right-5 bg-[#df7c5b] text-[#241729] px-4 py-3 font-mono-custom text-[10px] uppercase tracking-[.08em]">{notice}</div>}
+    {notice && createPortal(<div role="status" data-testid="status-dish-added" className="fixed z-30 top-24 right-5 bg-[#df7c5b] text-[#241729] px-4 py-3 font-mono-custom text-[10px] uppercase tracking-[.08em]">{notice}</div>, document.body)}
   </main></Shell>;
 }
 
