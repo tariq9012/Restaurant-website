@@ -90,6 +90,7 @@ function DishCard({ dish, add }: { dish: Dish; add: (dish: Dish) => void }) {
 function CheckoutForm({ order, onClose, onComplete, onRemove }: { order: Dish[]; onClose: () => void; onComplete: () => void; onRemove: (menuItemId: number) => void }) {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
+  const [placed, setPlaced] = useState(false);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -109,6 +110,7 @@ function CheckoutForm({ order, onClose, onComplete, onRemove }: { order: Dish[];
         deliveryAddress: values.deliveryAddress || undefined,
         items,
       }) });
+      setPlaced(true);
       onComplete();
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : 'We could not place your order');
@@ -116,6 +118,15 @@ function CheckoutForm({ order, onClose, onComplete, onRemove }: { order: Dish[];
       setSending(false);
     }
   };
+  if (placed) return <div className="fixed inset-0 z-50 bg-[#241729]/90 flex items-center justify-center p-5" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className="w-full max-w-lg bg-[#30203a] border border-[#e8d9bb]/20 p-8 md:p-14 relative flex flex-col items-start">
+      <button aria-label="Close" onClick={onClose} data-testid="button-close-order-confirmation" className="absolute right-5 top-5 text-[#f1e4c6]"><X size={18} /></button>
+      <span className="w-14 h-14 rounded-full border border-[#df7c5b] flex items-center justify-center text-[#df7c5b]"><Check size={26} /></span>
+      <h2 className="font-display text-5xl text-[#f1e4c6] mt-7">Order received.</h2>
+      <p className="text-[#c9b99f]/75 text-sm leading-6 max-w-[380px] mt-5">Thank you — your order is confirmed and the kitchen is already on it. We'll have it ready and on its way to you shortly. A confirmation has been sent to your email.</p>
+      <button onClick={onClose} data-testid="button-done-order-confirmation" className="button-primary mt-9">Back to the menu</button>
+    </div>
+  </div>;
   return <div className="fixed inset-0 z-50 bg-[#241729]/90 flex items-center justify-center p-5" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[#30203a] border border-[#e8d9bb]/20 relative">
       <div className="sticky top-0 z-10 bg-[#30203a] p-8 md:p-10 pb-0 border-b border-[#e8d9bb]/15">
@@ -187,7 +198,7 @@ function Menu() {
     </div></section>
     <section className="px-5 md:px-10 py-20 bg-[#30203a]"><div className="mx-auto max-w-[1360px] flex flex-col md:flex-row gap-10 md:items-center justify-between"><div><div className="eyebrow">A note from the kitchen</div><p className="font-display text-4xl md:text-5xl text-[#f1e4c6] mt-5 max-w-[680px]">“The menu is a conversation with the market. It may change before you arrive.”</p></div><div className="md:text-right"><Clock3 className="text-[#df7c5b] md:ml-auto" size={24} /><p className="mt-4 text-sm text-[#c9b99f]/70 leading-6">Please allow 45 minutes<br />for dishes marked for two.</p></div></div></section>
     {order.length > 0 && createPortal(<div className="fixed z-20 bottom-5 left-5 right-5 md:left-auto md:right-8 md:w-[360px] bg-[#e9bf83] text-[#241729] p-4 shadow-2xl flex items-center justify-between"><div><span className="font-mono-custom text-[10px] uppercase tracking-[.1em]">{order.length} {order.length === 1 ? 'dish' : 'dishes'} in your order</span><p className="font-display text-xl mt-1">{formatPrice(order.reduce((sum, dish) => sum + dish.price, 0))}</p></div><div className="flex items-center gap-4"><button onClick={() => setOrder([])} data-testid="button-clear-order" className="font-mono-custom text-[10px] uppercase border-b border-[#241729]/50 pb-1">Clear</button><button onClick={() => setCheckoutOpen(true)} data-testid="button-checkout-order" className="font-mono-custom text-[10px] uppercase border-b border-[#241729]/50 pb-1">Order now</button></div></div>, document.body)}
-    {checkoutOpen && createPortal(<CheckoutForm order={order} onClose={() => setCheckoutOpen(false)} onRemove={removeOne} onComplete={() => { setOrder([]); setCheckoutOpen(false); setNotice('Order placed — thank you'); window.setTimeout(() => setNotice(''), 2600); }} />, document.body)}
+    {checkoutOpen && createPortal(<CheckoutForm order={order} onClose={() => setCheckoutOpen(false)} onRemove={removeOne} onComplete={() => setOrder([])} />, document.body)}
     {notice && createPortal(<div role="status" data-testid="status-dish-added" className="fixed z-30 top-24 right-5 bg-[#df7c5b] text-[#241729] px-4 py-3 font-mono-custom text-[10px] uppercase tracking-[.08em]">{notice}</div>, document.body)}
   </main></Shell>;
 }
