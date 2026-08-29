@@ -87,7 +87,7 @@ function DishCard({ dish, add }: { dish: Dish; add: (dish: Dish) => void }) {
   </article>;
 }
 
-function CheckoutForm({ order, onClose, onComplete }: { order: Dish[]; onClose: () => void; onComplete: () => void }) {
+function CheckoutForm({ order, onClose, onComplete, onRemove }: { order: Dish[]; onClose: () => void; onComplete: () => void; onRemove: (menuItemId: number) => void }) {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -117,30 +117,37 @@ function CheckoutForm({ order, onClose, onComplete }: { order: Dish[]; onClose: 
     }
   };
   return <div className="fixed inset-0 z-50 bg-[#241729]/90 flex items-center justify-center p-5" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[#30203a] border border-[#e8d9bb]/20 p-8 md:p-10 relative">
-      <button aria-label="Close order form" onClick={onClose} className="absolute right-5 top-5 text-[#f1e4c6]"><X size={18} /></button>
-      <div className="eyebrow">The good part</div>
-      <h2 className="font-display text-4xl text-[#f1e4c6] mt-5">Place your order.</h2>
-      <p className="mt-3 text-sm text-[#c9b99f]/70">{order.length} {order.length === 1 ? 'dish' : 'dishes'} · {formatPrice(order.reduce((sum, dish) => sum + dish.price, 0))} before tax</p>
-      <ul className="mt-6 divide-y divide-[#e8d9bb]/15 border-y border-[#e8d9bb]/15">
-        {[...new Set(order.map((dish) => dish.id))].map((menuItemId) => {
-          const dish = order.find((item) => item.id === menuItemId)!;
-          const quantity = order.filter((item) => item.id === menuItemId).length;
-          return <li key={menuItemId} className="flex items-center justify-between gap-4 py-3">
-            <span className="text-sm text-[#f1e4c6]">{quantity} × {dish.name}</span>
-            <span className="font-mono-custom text-xs text-[#e9bf83] whitespace-nowrap">{formatPrice(dish.price * quantity)}</span>
-          </li>;
-        })}
-      </ul>
-      <form onSubmit={submit} className="mt-8 space-y-6">
-        <Field label="Your name" name="customerName" placeholder="Your name" />
-        <Field label="Email address" name="customerEmail" type="email" placeholder="you@example.com" />
-        <Field label="Phone number" name="customerPhone" type="tel" placeholder="+92 ..." />
-        <label className="block"><span className="eyebrow block mb-3">How would you like it?</span><select required name="orderType" defaultValue="takeaway" className="w-full bg-transparent border-b border-[#e8d9bb]/25 py-3 text-[#f1e4c6] text-sm"><option className="bg-[#241729]" value="takeaway">Takeaway</option><option className="bg-[#241729]" value="delivery">Delivery</option><option className="bg-[#241729]" value="dine_in">Dine in</option></select></label>
-        <label className="block"><span className="eyebrow block mb-3">Delivery address (if needed)</span><textarea name="deliveryAddress" rows={2} placeholder="Leave blank for takeaway or dine in" className="w-full resize-none bg-transparent border-b border-[#e8d9bb]/25 py-3 text-[#f1e4c6] placeholder:text-[#c9b99f]/40 text-sm" /></label>
-        {error && <p role="alert" className="text-sm text-[#df7c5b]">{error}</p>}
-        <button type="submit" disabled={sending} className="button-primary disabled:opacity-50">{sending ? 'Placing…' : 'Place order'} {!sending && <ArrowRight size={14} />}</button>
-      </form>
+    <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[#30203a] border border-[#e8d9bb]/20 relative">
+      <div className="sticky top-0 z-10 bg-[#30203a] p-8 md:p-10 pb-0 border-b border-[#e8d9bb]/15">
+        <button aria-label="Close order form" onClick={onClose} className="absolute right-5 top-5 text-[#f1e4c6]"><X size={18} /></button>
+        <div className="eyebrow">The good part</div>
+        <h2 className="font-display text-4xl text-[#f1e4c6] mt-5">Place your order.</h2>
+        <p className="mt-3 text-sm text-[#c9b99f]/70">{order.length} {order.length === 1 ? 'dish' : 'dishes'} · {formatPrice(order.reduce((sum, dish) => sum + dish.price, 0))} before tax</p>
+        <ul className="mt-6 divide-y divide-[#e8d9bb]/15 border-t border-[#e8d9bb]/15">
+          {[...new Set(order.map((dish) => dish.id))].map((menuItemId) => {
+            const dish = order.find((item) => item.id === menuItemId)!;
+            const quantity = order.filter((item) => item.id === menuItemId).length;
+            return <li key={menuItemId} className="flex items-center justify-between gap-3 py-3">
+              <span className="text-sm text-[#f1e4c6]">{quantity} × {dish.name}</span>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-mono-custom text-xs text-[#e9bf83] whitespace-nowrap">{formatPrice(dish.price * quantity)}</span>
+                <button type="button" aria-label={`Remove one ${dish.name}`} onClick={() => onRemove(menuItemId)} data-testid={`button-remove-order-${menuItemId}`} className="text-[#c9b99f]/60 hover:text-[#df7c5b]"><X size={14} /></button>
+              </div>
+            </li>;
+          })}
+        </ul>
+      </div>
+      <div className="p-8 md:p-10 pt-8">
+        <form onSubmit={submit} className="space-y-6">
+          <Field label="Your name" name="customerName" placeholder="Your name" />
+          <Field label="Email address" name="customerEmail" type="email" placeholder="you@example.com" />
+          <Field label="Phone number" name="customerPhone" type="tel" placeholder="+92 ..." />
+          <label className="block"><span className="eyebrow block mb-3">How would you like it?</span><select required name="orderType" defaultValue="takeaway" className="w-full bg-transparent border-b border-[#e8d9bb]/25 py-3 text-[#f1e4c6] text-sm"><option className="bg-[#241729]" value="takeaway">Takeaway</option><option className="bg-[#241729]" value="delivery">Delivery</option><option className="bg-[#241729]" value="dine_in">Dine in</option></select></label>
+          <label className="block"><span className="eyebrow block mb-3">Delivery address (if needed)</span><textarea name="deliveryAddress" rows={2} placeholder="Leave blank for takeaway or dine in" className="w-full resize-none bg-transparent border-b border-[#e8d9bb]/25 py-3 text-[#f1e4c6] placeholder:text-[#c9b99f]/40 text-sm" /></label>
+          {error && <p role="alert" className="text-sm text-[#df7c5b]">{error}</p>}
+          <button type="submit" disabled={sending} className="button-primary disabled:opacity-50">{sending ? 'Placing…' : 'Place order'} {!sending && <ArrowRight size={14} />}</button>
+        </form>
+      </div>
     </div>
   </div>;
 }
@@ -167,13 +174,20 @@ function Menu() {
   }, []);
   const filtered = useMemo(() => menuDishes.filter((dish) => (category === 'All dishes' || dish.category === category) && `${dish.name} ${dish.description}`.toLowerCase().includes(search.toLowerCase())), [category, search, menuDishes]);
   const add = (dish: Dish) => { setOrder((old) => [...old, dish]); setNotice(`${dish.name} added`); window.setTimeout(() => setNotice(''), 2200); };
+  const removeOne = (menuItemId: number) => setOrder((old) => {
+    const index = old.findIndex((dish) => dish.id === menuItemId);
+    if (index === -1) return old;
+    const next = [...old.slice(0, index), ...old.slice(index + 1)];
+    if (next.length === 0) setCheckoutOpen(false);
+    return next;
+  });
   return <Shell><main><PageIntro eyebrow="The menu · changes with the season" title={<>Good things<br /><span className="serif-italic text-[#df7c5b]">take fire.</span></>} intro="A loose, generous menu shaped by what is growing, what is local, and what the embers are asking for. Come hungry; leave room for one more thing." />
     <section className="px-5 md:px-10 pb-24"><div className="mx-auto max-w-[1360px]"><div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-y hairline py-4"><div className="flex gap-5 overflow-x-auto">{categories.map((item) => <button key={item} onClick={() => setCategory(item)} data-testid={`button-filter-${item.toLowerCase().replaceAll(' ', '-')}`} className={`whitespace-nowrap font-mono-custom text-[10px] uppercase tracking-[.1em] ${category === item ? 'text-[#df7c5b]' : 'text-[#c9b99f]/55 hover:text-[#f1e4c6]'}`}>{item}</button>)}</div><label className="flex items-center gap-2 border-b border-[#e8d9bb]/20 pb-2 w-full md:w-56"><Search size={14} className="text-[#c9b99f]/50" /><input value={search} onChange={(e) => setSearch(e.target.value)} data-testid="input-menu-search" type="search" placeholder="Search the menu" className="bg-transparent text-sm text-[#f1e4c6] placeholder:text-[#c9b99f]/45 w-full" /></label></div>
       {loading ? <div className="py-24 text-center text-[#c9b99f]/65 font-mono-custom text-[10px] uppercase tracking-[.12em]">Loading the menu…</div> : loadError ? <div className="py-24 text-center"><p className="font-display text-4xl text-[#f1e4c6]">The kitchen is taking a moment.</p><p className="mt-4 text-sm text-[#c9b99f]/65">{loadError}</p></div> : filtered.length ? <div className="grid md:grid-cols-2 gap-x-10 gap-y-14 mt-14">{filtered.map((dish) => <DishCard key={dish.id} dish={dish} add={add} />)}</div> : <div className="py-24 text-center"><p className="font-display text-4xl text-[#f1e4c6]">Nothing by that name tonight.</p><button onClick={() => setSearch('')} data-testid="button-clear-menu-search" className="mt-5 text-[#e9bf83] font-mono-custom text-[10px] uppercase tracking-[.12em]">Clear search</button></div>}
     </div></section>
     <section className="px-5 md:px-10 py-20 bg-[#30203a]"><div className="mx-auto max-w-[1360px] flex flex-col md:flex-row gap-10 md:items-center justify-between"><div><div className="eyebrow">A note from the kitchen</div><p className="font-display text-4xl md:text-5xl text-[#f1e4c6] mt-5 max-w-[680px]">“The menu is a conversation with the market. It may change before you arrive.”</p></div><div className="md:text-right"><Clock3 className="text-[#df7c5b] md:ml-auto" size={24} /><p className="mt-4 text-sm text-[#c9b99f]/70 leading-6">Please allow 45 minutes<br />for dishes marked for two.</p></div></div></section>
     {order.length > 0 && createPortal(<div className="fixed z-20 bottom-5 left-5 right-5 md:left-auto md:right-8 md:w-[360px] bg-[#e9bf83] text-[#241729] p-4 shadow-2xl flex items-center justify-between"><div><span className="font-mono-custom text-[10px] uppercase tracking-[.1em]">{order.length} {order.length === 1 ? 'dish' : 'dishes'} in your order</span><p className="font-display text-xl mt-1">{formatPrice(order.reduce((sum, dish) => sum + dish.price, 0))}</p></div><div className="flex items-center gap-4"><button onClick={() => setOrder([])} data-testid="button-clear-order" className="font-mono-custom text-[10px] uppercase border-b border-[#241729]/50 pb-1">Clear</button><button onClick={() => setCheckoutOpen(true)} data-testid="button-checkout-order" className="font-mono-custom text-[10px] uppercase border-b border-[#241729]/50 pb-1">Order now</button></div></div>, document.body)}
-    {checkoutOpen && <CheckoutForm order={order} onClose={() => setCheckoutOpen(false)} onComplete={() => { setOrder([]); setCheckoutOpen(false); setNotice('Order placed — thank you'); window.setTimeout(() => setNotice(''), 2600); }} />}
+    {checkoutOpen && <CheckoutForm order={order} onClose={() => setCheckoutOpen(false)} onRemove={removeOne} onComplete={() => { setOrder([]); setCheckoutOpen(false); setNotice('Order placed — thank you'); window.setTimeout(() => setNotice(''), 2600); }} />}
     {notice && createPortal(<div role="status" data-testid="status-dish-added" className="fixed z-30 top-24 right-5 bg-[#df7c5b] text-[#241729] px-4 py-3 font-mono-custom text-[10px] uppercase tracking-[.08em]">{notice}</div>, document.body)}
   </main></Shell>;
 }
